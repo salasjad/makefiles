@@ -1,0 +1,74 @@
+##########################################################################################################
+# Salahuddin Asjad - www.asjad.no
+#
+# This Makefile gives you full control of the Quartus Prime (Lite) design flow without using the GUI.
+#
+# Notice that:
+# 	* Quartus Prime (Lite) needs to be installed before proceeding with this Makefile.
+# 	* The bin/ folder of Quartus installation needs to be added to the $PATH variable.
+#     On my computer, the bin/ folder is located in /opt/intelFPGA_lite/17.1/quartus/bin/
+#		* It is assumed that all source code (.vhd files) used in this project are located in the src/ folder.
+#		* The generated output files can be found in output_files/ folder after the make.
+#
+#		Look in logfile.txt if unexpected behaviour occur.
+#  ____________________________________________________________
+# | Variable  | Description																		 |
+# |============================================================|
+# | FAMILY    | Altera device name (e.g: cyclonev, max, maxv). |
+# |------------------------------------------------------------|
+# | PART      | Part number of the Altera device.              |
+# |------------------------------------------------------------|
+# | PROJECT   | Entity name of the top-module.                 |
+#  ------------------------------------------------------------
+#
+##########################################################################################################
+
+
+FAMILY = "cyclonev"
+PART = 5CSXFC6D6F31C8
+BOARDFILE = 5CSXFC6
+
+PROJECT = ledBlink
+
+ASSIGNMENT_FILES = $(PROJECT).qpf $(PROJECT).qsf
+
+SOURCE_FILES = $(shell find src/ -name '*.vhd')
+
+###################################################################
+
+.PHONY: all
+all: smart.log $(PROJECT).map.rpt $(PROJECT).fit.rpt $(PROJECT).asm.rpt #$(PROJECT).tan.rpt
+
+.PHONY: clean
+clean:
+	rm -rf logfile.txt smart.log output_files db incremental_db
+
+map: smart.log $(PROJECT).map.rpt
+fit: smart.log $(PROJECT).fit.rpt
+asm: smart.log $(PROJECT).asm.rpt
+tan: smart.log $(PROJECT).tan.rpt
+smart: smart.log
+
+MAP_ARGS = --family=$(FAMILY)
+FIT_ARGS = --part=$(PART)
+ASM_ARGS =
+TAN_ARGS =
+
+$(PROJECT).map.rpt: $(SOURCE_FILES)
+	quartus_map $(MAP_ARGS) $(PROJECT)
+	@echo $(PROJECT).map.rpt: Done > logfile.txt
+
+$(PROJECT).fit.rpt: $(PROJECT).map.rpt
+	quartus_fit $(FIT_ARGS) $(PROJECT)
+	@echo $(PROJECT).fit.rpt: Done >> logfile.txt
+
+$(PROJECT).asm.rpt: $(PROJECT).fit.rpt
+	quartus_asm $(ASM_ARGS) $(PROJECT)
+	@echo $(PROJECT).asm.rpt: Done >> logfile.txt
+
+$(PROJECT).tan.rpt: $(PROJECT).fit.rpt
+	quartus_tan $(TAN_ARGS) $(PROJECT)
+	@echo $(PROJECT).tan.rpt: Done >> logfile.txt
+
+smart.log: $(ASSIGNMENT_FILES)
+	quartus_sh --determine_smart_action $(PROJECT) > smart.log
