@@ -72,3 +72,6 @@ $(PROJECT).tan.rpt: $(PROJECT).fit.rpt
 
 smart.log: $(ASSIGNMENT_FILES)
 	quartus_sh --determine_smart_action $(PROJECT) > smart.log
+
+flash:
+	quartus_pgm -z --mode=JTAG --operation="p;output_files/$(PROJECT).sof"
